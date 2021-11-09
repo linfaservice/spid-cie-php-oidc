@@ -1,0 +1,19 @@
+{
+    "spid-php-proxy": {
+      "url": "https://",
+      "client_id": "",
+      "redirect_uri": "https://"
+    },
+
+    "clients": {
+        "XXX": {
+          "name": "",
+          "client_id": "XXX",
+          "client_secret": "",
+          "redirect_uri": [
+            "https://"
+          ],
+          "level": "2"
+        }
+    }
+}
