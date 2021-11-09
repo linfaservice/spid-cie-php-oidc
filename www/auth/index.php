@@ -14,6 +14,8 @@
     $redirect_uri   = $_GET['redirect_uri'];
     $state          = $_GET['state'];
 
+    $db->log("AUTH", var_export($_GET, true));
+
     try {
         if(strpos($scope, 'openid')<0) throw new Exception('invalid_scope');
         if(strpos($scope, 'profile')<0) throw new Exception('invalid_scope');

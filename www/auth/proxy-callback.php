@@ -11,25 +11,16 @@ $origin = $_SERVER['HTTP_ORIGIN'];
 
 if($origin==$config['spid-php-proxy']['origin']) {
 
-    /*
-    $spidCode       = $_POST['spidCode'];
-    $name           = $_POST['name'];
-    $familyName     = $_POST['familyName'];
-    $placeOfBirth   = $_POST['placeOfBirth'];
-    $countyOfBirth  = $_POST['countyOfBirth'];
-    $dateOfBirth    = $_POST['dateOfBirth'];
-    $gender         = $_POST['gender'];
-    $fiscalNumber   = $_POST['fiscalNumber'];
-    $mobilePhone    = $_POST['mobilePhone'];
-    $email          = $_POST['email'];
-    */
-
     $req_id         = base64_decode($_POST['state']);
     $auth_code      = $db->createAuthorizationCode($req_id);
     $request        = $db->getRequest($req_id);
     $client_id      = $request['client_id'];
     $redirect_uri   = $request['redirect_uri'];
     $state          = $request['state'];
+    $userinfo       = $_POST;
+
+    unset($userinfo['state']);
+    $db->saveUserinfo($req_id, $userinfo);
 
     $return = $redirect_uri;
     if(strpos($redirect_uri, '?')>-1) $return.='&code='.$auth_code;

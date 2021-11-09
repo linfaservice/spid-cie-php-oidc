@@ -16,7 +16,8 @@ class Database {
                 auth_timestamp  DATETIME,
                 access_token    STRING UNIQUE,
                 token_timestamp DATETIME,
-                state           STRING
+                state           STRING,
+                userinfo        STRING
             );
 
             CREATE TABLE IF NOT EXISTS log (
@@ -43,7 +44,6 @@ class Database {
         $stmt->bindValue(':state', $state, SQLITE3_TEXT);
         $stmt->execute();
         $req_id = $this->db->lastInsertRowid();
-
         return $req_id;
     }
 
@@ -104,18 +104,19 @@ class Database {
 
     function checkAuthorizationCode($client_id, $redirect_uri, $code) {
         $check = false;
-        $stmt = $this->db->prepare("
+        $result = $this->query("
             SELECT req_id FROM token 
             WHERE client_id=:client_id 
             AND redirect_uri=:redirect_uri
             AND code=:code;
-        ");
-        $stmt->bindValue(':client_id', $client_id, SQLITE3_TEXT);
-        $stmt->bindValue(':redirect_uri', $redirect_uri, SQLITE3_TEXT);
-        $stmt->bindValue(':code', $code, SQLITE3_TEXT);
-        $result = $stmt->execute();
+        ", array(
+            ":client_id" => $client_id,
+            ":redirect_uri" => $redirect_uri,
+            ":code" => $code
+        ));
+
         if(count($result)==1) $check = true;
-        return $result[0]['req_id'];
+        return $check;
     }
 
     function createAccessToken($code) {
@@ -129,6 +130,24 @@ class Database {
         $stmt->bindValue(':code', $code, SQLITE3_TEXT);
         $stmt->execute();
         return $access_token;
+    }
+
+    function saveUserinfo($req_id, $userinfo) {
+        $this->exec(
+            "UPDATE token SET userinfo=:userinfo WHERE req_id=:req_id", 
+            array(
+                ":userinfo" => json_encode($userinfo),
+                ":req_id" => $req_id
+            )
+        );
+    }
+
+    function getUserinfo($access_token) {
+        $userinfo = $this->query(
+            "SELECT userinfo FROM token WHERE access_token=:access_token",
+            array(":access_token" => $access_token)
+        );
+        return json_decode($userinfo[0]['userinfo']);
     }
 
     function query($sql, $values=array()) {
@@ -155,6 +174,16 @@ class Database {
 
     function dump($table) {
         return $this->query("SELECT * FROM ".$table);
+    }
+
+    function log($tag, $value) {
+        $this->exec("
+            INSERT INTO log(tag, value)
+            VALUES(:tag, :value);
+        ", array(
+            ":tag" => $tag,
+            ":value" => json_encode($value)
+        ));
     }
     
 }
