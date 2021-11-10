@@ -1,20 +1,23 @@
 <?php
-    $Database = require("../../lib/Database.php");
 
-    const CONFIG_FILE = "../../spid-php-oidc.json";
-    const DEBUG = true;
+class EndpointUserinfo extends Endpoint {
 
-    $config         = file_exists(CONFIG_FILE)? json_decode(file_get_contents(CONFIG_FILE), true) : array();
-    $clients        = $config['clients'];
-    $db             = new Database($config['database']);
+    public $name = "Userinfo Endpoint";
 
-    $db->log("USERINFO", "Bearer: ".getBearerToken());
-    $userinfo = (array) $db->getUserinfo(getBearerToken());
-    $userinfo['sub'] = $userinfo['fiscalNumber'];
-    $db->log("USERINFO", $userinfo);
+    function __construct($config, $db) {
+        parent::__construct($config, $db);
+    }
 
-    header('Content-Type: application/json; charset=utf-8');
-    echo json_encode($userinfo);
+    function process() {
+        $bearer = $this->getBearerToken();
+        $this->db->log("USERINFO", "Bearer: ".$bearer);
+        $userinfo = (array) $this->db->getUserinfo($bearer);
+        $userinfo['sub'] = $userinfo['fiscalNumber'];
+        $this->db->log("USERINFO", $userinfo);
+
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($userinfo);
+    }
 
     /** 
      * Get hearder Authorization
@@ -35,18 +38,21 @@
                 $headers = trim($requestHeaders['Authorization']);
             }
         }
+        $this->db->log("HEADERS", var_export($headers, true));
         return $headers;
     }
     /**
      * get access token from header
      * */
     function getBearerToken() {
-        $headers = getAuthorizationHeader();
+        $headers = $this->getAuthorizationHeader();
         // HEADER: Get the access token from the header
         if (!empty($headers)) {
             if (preg_match('/Bearer\s(\S+)/', $headers, $matches)) {
+                $this->db->log("BEARER", var_export($matches, true));
                 return $matches[1];
             }
         }
         return null;
     }
+}

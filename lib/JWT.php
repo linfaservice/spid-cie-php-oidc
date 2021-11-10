@@ -1,5 +1,5 @@
 <?php
-    require_once("/home/spidauth/spid-php/proxy-spid-php.php");
+    require_once("../vendor/autoload.php");
 
     use Jose\Component\Core\AlgorithmManager;
     use Jose\Component\Core\JWK;
@@ -21,109 +21,111 @@
 
     const DEFAULT_SECRET = "";
     const DEFAULT_TOKEN_EXPIRATION_TIME = 1200;
-    const DEBUG = false;
 
 
-    function makeJWE($payload, $exp_time, $iss, $aud, $secret): string {
+    class JWT {
+
+        static function makeJWE($payload, $exp_time, $iss, $aud, $secret): string {
+            
+            $iat        = new DateTimeImmutable();
+            $exp_time   = $exp_time?: DEFAULT_TOKEN_EXPIRATION_TIME;
+            $exp        = $iat->modify("+".$exp_time." seconds")->getTimestamp();
+
+            $data = [
+                'iss'  => $iss,                                     // Issuer - spDomain
+                'aud'  => $aud,                                     // Audience - Redirect_uri
+                'iat'  => $iat->getTimestamp(),                     // Issued at: time when the token was generated
+                'nbf'  => $iat->getTimestamp(),                     // Not before
+                'exp'  => $exp,                                     // Expire
+                'data' => $payload,                                 // Authentication Data
+            ];
+
+            $keyEncryptionAlgorithmManager = new AlgorithmManager([ new A256KW() ]); 
+            $contentEncryptionAlgorithmManager = new AlgorithmManager([ new A256CBCHS512() ]);
+            $compressionMethodManager = new CompressionMethodManager([ new Deflate() ]);
+
+            $jweBuilder = new JWEBuilder(
+                $keyEncryptionAlgorithmManager,
+                $contentEncryptionAlgorithmManager,
+                $compressionMethodManager
+            );
+
+            $jwk = JWKFactory::createFromSecret($secret?:DEFAULT_SECRET);
+
+            $jwe = $jweBuilder
+                ->create()
+                ->withPayload(json_encode($data))
+                ->withSharedProtectedHeader([
+                    'alg' => 'A256KW',
+                    'enc' => 'A256CBC-HS512',
+                    'zip' => 'DEF'
+                ])
+                ->addRecipient($jwk) 
+                ->build();
+
+            $serializer = new JWESerializer();
+            $token = $serializer->serialize($jwe, 0); 
+
+            return $token;
+        }
+
+        static function makeJWS($payload, $exp_time, $iss, $aud, $jwk_pem): string {
+            
+            $iat        = new DateTimeImmutable();
+            $exp_time   = $exp_time?: DEFAULT_TOKEN_EXPIRATION_TIME;
+            $exp        = $iat->modify("+".$exp_time." seconds")->getTimestamp();
+
+            $data = [
+                'iss'  => $iss,                                     // Issuer - spDomain
+                'aud'  => $aud,                                     // Audience - Redirect_uri
+                'iat'  => $iat->getTimestamp(),                     // Issued at: time when the token was generated
+                'nbf'  => $iat->getTimestamp(),                     // Not before
+                'exp'  => $exp,                                     // Expire
+                'data' => $payload,                                 // Authentication Data
+            ];
+
+            $algorithmManager = new AlgorithmManager([new RS256()]);
+            $jwk = JWKFactory::createFromKeyFile($jwk_pem);
+            $jwsBuilder = new JWSBuilder($algorithmManager);
+            $jws = $jwsBuilder
+                ->create() 
+                ->withPayload(json_encode($data)) 
+                ->addSignature($jwk, ['alg' => 'RS256']) 
+                ->build(); 
+            
+            $serializer = new JWSSerializer(); 
+            $token = $serializer->serialize($jws, 0); 
         
-        $iat        = new DateTimeImmutable();
-        $exp_time   = $exp_time?: DEFAULT_TOKEN_EXPIRATION_TIME;
-        $exp        = $iat->modify("+".$exp_time." seconds")->getTimestamp();
+            return $token;
+        }
 
-        $data = [
-            'iss'  => $iss,                                     // Issuer - spDomain
-            'aud'  => $aud,                                     // Audience - Redirect_uri
-            'iat'  => $iat->getTimestamp(),                     // Issued at: time when the token was generated
-            'nbf'  => $iat->getTimestamp(),                     // Not before
-            'exp'  => $exp,                                     // Expire
-            'data' => $payload,                                 // Authentication Data
-        ];
+        static function makeIdToken($subject, $exp_time, $iss, $aud, $jwk_pem): string {
+            
+            $iat        = new DateTimeImmutable();
+            $exp_time   = $exp_time?: DEFAULT_TOKEN_EXPIRATION_TIME;
+            $exp        = $iat->modify("+".$exp_time." seconds")->getTimestamp();
 
-        $keyEncryptionAlgorithmManager = new AlgorithmManager([ new A256KW() ]); 
-        $contentEncryptionAlgorithmManager = new AlgorithmManager([ new A256CBCHS512() ]);
-        $compressionMethodManager = new CompressionMethodManager([ new Deflate() ]);
+            $data = [
+                'iss'  => $iss,                                     // Issuer - spDomain
+                'aud'  => $aud,                                     // Audience - Redirect_uri
+                'iat'  => $iat->getTimestamp(),                     // Issued at: time when the token was generated
+                'nbf'  => $iat->getTimestamp(),                     // Not before
+                'exp'  => $exp,                                     // Expire
+                'sub'   => $subject,                                // Subject Data
+            ];
 
-        $jweBuilder = new JWEBuilder(
-            $keyEncryptionAlgorithmManager,
-            $contentEncryptionAlgorithmManager,
-            $compressionMethodManager
-        );
-
-        $jwk = JWKFactory::createFromSecret($secret?:DEFAULT_SECRET);
-
-        $jwe = $jweBuilder
-            ->create()
-            ->withPayload(json_encode($data))
-            ->withSharedProtectedHeader([
-                'alg' => 'A256KW',
-                'enc' => 'A256CBC-HS512',
-                'zip' => 'DEF'
-            ])
-            ->addRecipient($jwk) 
-            ->build();
-
-        $serializer = new JWESerializer();
-        $token = $serializer->serialize($jwe, 0); 
-
-        return $token;
-    }
-
-    function makeJWS($payload, $exp_time, $iss, $aud, $jwk_pem): string {
+            $algorithmManager = new AlgorithmManager([new RS256()]);
+            $jwk = JWKFactory::createFromKeyFile($jwk_pem);
+            $jwsBuilder = new JWSBuilder($algorithmManager);
+            $jws = $jwsBuilder
+                ->create() 
+                ->withPayload(json_encode($data)) 
+                ->addSignature($jwk, ['alg' => 'RS256']) 
+                ->build(); 
+            
+            $serializer = new JWSSerializer(); 
+            $token = $serializer->serialize($jws, 0); 
         
-        $iat        = new DateTimeImmutable();
-        $exp_time   = $exp_time?: DEFAULT_TOKEN_EXPIRATION_TIME;
-        $exp        = $iat->modify("+".$exp_time." seconds")->getTimestamp();
-
-        $data = [
-            'iss'  => $iss,                                     // Issuer - spDomain
-            'aud'  => $aud,                                     // Audience - Redirect_uri
-            'iat'  => $iat->getTimestamp(),                     // Issued at: time when the token was generated
-            'nbf'  => $iat->getTimestamp(),                     // Not before
-            'exp'  => $exp,                                     // Expire
-            'data' => $payload,                                 // Authentication Data
-        ];
-
-        $algorithmManager = new AlgorithmManager([new RS256()]);
-        $jwk = JWKFactory::createFromKeyFile($jwk_pem);
-        $jwsBuilder = new JWSBuilder($algorithmManager);
-        $jws = $jwsBuilder
-            ->create() 
-            ->withPayload(json_encode($data)) 
-            ->addSignature($jwk, ['alg' => 'RS256']) 
-            ->build(); 
-        
-        $serializer = new JWSSerializer(); 
-        $token = $serializer->serialize($jws, 0); 
-    
-        return $token;
-    }
-
-    function makeIdToken($subject, $exp_time, $iss, $aud, $jwk_pem): string {
-        
-        $iat        = new DateTimeImmutable();
-        $exp_time   = $exp_time?: DEFAULT_TOKEN_EXPIRATION_TIME;
-        $exp        = $iat->modify("+".$exp_time." seconds")->getTimestamp();
-
-        $data = [
-            'iss'  => $iss,                                     // Issuer - spDomain
-            'aud'  => $aud,                                     // Audience - Redirect_uri
-            'iat'  => $iat->getTimestamp(),                     // Issued at: time when the token was generated
-            'nbf'  => $iat->getTimestamp(),                     // Not before
-            'exp'  => $exp,                                     // Expire
-            'sub'   => $subject,                                // Subject Data
-        ];
-
-        $algorithmManager = new AlgorithmManager([new RS256()]);
-        $jwk = JWKFactory::createFromKeyFile($jwk_pem);
-        $jwsBuilder = new JWSBuilder($algorithmManager);
-        $jws = $jwsBuilder
-            ->create() 
-            ->withPayload(json_encode($data)) 
-            ->addSignature($jwk, ['alg' => 'RS256']) 
-            ->build(); 
-        
-        $serializer = new JWSSerializer(); 
-        $token = $serializer->serialize($jws, 0); 
-    
-        return $token;
+            return $token;
+        }
     }

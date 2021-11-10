@@ -1,0 +1,3 @@
+RewriteEngine On
+RewriteCond %{REQUEST_URI} !dump\.php$ [NC]
+RewriteRule .* index.php [E=HTTP_AUTHORIZATION:%{HTTP:Authorization},L,QSA]
