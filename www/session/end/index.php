@@ -17,7 +17,7 @@
         
         $logout_url = $config['spid-php-proxy']['logout_url'];
         $logout_url.= '?client_id='.$config['spid-php-proxy']['client_id'];
-        $logout_url.= '&redirect_uri='.$config['spid-php-proxy']['post_logout_redirect_uri'];
+        $logout_url.= '&redirect_uri='.urlencode($post_logout_redirect_uri);
 
         header('Location: '.$logout_url); 
     }
