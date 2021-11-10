@@ -28,7 +28,7 @@
             $req_id = $db->createRequest($client_id, $redirect_uri, $state);
         }
 
-        header('Location: '.$config['spid-php-proxy']['url']
+        header('Location: '.$config['spid-php-proxy']['login_url']
         .'?client_id='.$config['spid-php-proxy']['client_id']
         .'&level='.$config['clients'][$client_id]['level']
         .'&redirect_uri='.$config['spid-php-proxy']['redirect_uri']

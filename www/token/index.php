@@ -37,6 +37,8 @@
         $jwk_pem = $config['jwt_private_key'];
 
         $id_token = makeIdToken($subject, $exp_time, $iss, $aud, $jwk_pem);
+        $request = $db->getRequestByCode($code);
+        $db->saveIdToken($request['req_id'], $id_token);
 
         $db->log("ID_TOKEN", $id_token);
 

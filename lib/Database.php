@@ -14,6 +14,7 @@ class Database {
                 redirect_uri    STRING NOT NULL,
                 code            STRING UNIQUE,
                 auth_timestamp  DATETIME,
+                id_token        STRING UNIQUE,
                 access_token    STRING UNIQUE,
                 token_timestamp DATETIME,
                 state           STRING,
@@ -75,19 +76,6 @@ class Database {
         return $req_id;
     }
 
-    function createAuthorizationCode($req_id) {
-        $code = uniqid();
-        $stmt = $this->db->prepare("
-            UPDATE token 
-            SET code=:code, auth_timestamp=datetime('now')
-            WHERE req_id=:req_id;
-        ");
-        $stmt->bindValue(':code', $code, SQLITE3_TEXT);
-        $stmt->bindValue(':req_id', $req_id, SQLITE3_TEXT);
-        $stmt->execute();
-        return $code;
-    }
-
     function getRequest($req_id) {
         $result = $this->query("
             SELECT client_id, redirect_uri, state FROM token
@@ -100,6 +88,49 @@ class Database {
             "redirect_uri"  => $result[0]['redirect_uri'],
             "state"         => $result[0]['state'],
         );
+    }
+
+    function getRequestByCode($code) {
+        $result = $this->query("
+            SELECT req_id, client_id, redirect_uri, state FROM token
+            WHERE code = :code;",
+            array(":code" => $code)
+        );
+
+        return array(
+            "req_id"        => $result[0]['req_id'],
+            "client_id"     => $result[0]['client_id'],
+            "redirect_uri"  => $result[0]['redirect_uri'],
+            "state"         => $result[0]['state'],
+        );
+    }
+
+    function getRequestByIdToken($id_token) {
+        $result = $this->query("
+            SELECT req_id, client_id, redirect_uri, state FROM token
+            WHERE id_token = :id_token;",
+            array(":id_token" => $id_token)
+        );
+
+        return array(
+            "req_id"        => $result[0]['req_id'],
+            "client_id"     => $result[0]['client_id'],
+            "redirect_uri"  => $result[0]['redirect_uri'],
+            "state"         => $result[0]['state'],
+        );
+    }
+
+    function createAuthorizationCode($req_id) {
+        $code = uniqid();
+        $stmt = $this->db->prepare("
+            UPDATE token 
+            SET code=:code, auth_timestamp=datetime('now')
+            WHERE req_id=:req_id;
+        ");
+        $stmt->bindValue(':code', $code, SQLITE3_TEXT);
+        $stmt->bindValue(':req_id', $req_id, SQLITE3_TEXT);
+        $stmt->execute();
+        return $code;
     }
 
     function checkAuthorizationCode($client_id, $redirect_uri, $code) {
@@ -119,6 +150,29 @@ class Database {
         return $check;
     }
 
+    function saveIdToken($req_id, $id_token) {
+        $this->exec(
+            "UPDATE token SET id_token=:id_token WHERE req_id=:req_id", 
+            array(
+                ":id_token" => $id_token,
+                ":req_id" => $req_id
+            )
+        );
+    }
+
+    function checkIdToken($id_token) {
+        $check = false;
+        $result = $this->query("
+            SELECT req_id FROM token 
+            WHERE id_token=:id_token;
+        ", array(
+            ":id_token" => $id_token
+        ));
+
+        if(count($result)==1) $check = true;
+        return $check;
+    }
+
     function createAccessToken($code) {
         $access_token = uniqid();
         $stmt = $this->db->prepare("
@@ -130,6 +184,29 @@ class Database {
         $stmt->bindValue(':code', $code, SQLITE3_TEXT);
         $stmt->execute();
         return $access_token;
+    }
+
+    function saveAccessToken($req_id, $access_token) {
+        $this->exec(
+            "UPDATE token SET access_token=:access_token WHERE req_id=:req_id", 
+            array(
+                ":access_token" => $access_token,
+                ":req_id" => $req_id
+            )
+        );
+    }
+
+    function checkAccessToken($access_token) {
+        $check = false;
+        $result = $this->query("
+            SELECT req_id FROM token 
+            WHERE access_token=:access_token;
+        ", array(
+            ":access_token" => $access_token
+        ));
+
+        if(count($result)==1) $check = true;
+        return $check;
     }
 
     function saveUserinfo($req_id, $userinfo) {
@@ -148,6 +225,13 @@ class Database {
             array(":access_token" => $access_token)
         );
         return json_decode($userinfo[0]['userinfo']);
+    }
+
+    function deleteRequest($req_id) {
+        return $this->exec(
+            "DELETE FROM token WHERE req_id=:req_id",
+            array(":req_id" => $req_id)
+        );
     }
 
     function query($sql, $values=array()) {

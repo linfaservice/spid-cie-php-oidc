@@ -1,19 +1,26 @@
 {
-    "spid-php-proxy": {
-      "url": "https://",
-      "client_id": "",
-      "redirect_uri": "https://"
-    },
+  "spid-php-proxy": {
+    "login_url": "https://",
+    "logout_url": "https://",
+    "client_id": "",
+    "redirect_uri": "https://",
+    "post_logout_redirect_uri": "https://",
+    "origin": "https://"
+  },
 
-    "clients": {
-        "XXX": {
-          "name": "",
-          "client_id": "XXX",
-          "client_secret": "",
-          "redirect_uri": [
-            "https://"
-          ],
-          "level": "2"
-        }
-    }
+  "database": "spid-php-oidc.db",
+  "jwt_private_key": "",
+  "jwt_public_cert": "",
+
+  "clients": {
+      "1": {
+        "name": "xxx",
+        "client_id": "",
+        "client_secret": "",
+        "redirect_uri": [
+          "https://"
+        ],
+        "level": "2"
+      }
+  }
 }
