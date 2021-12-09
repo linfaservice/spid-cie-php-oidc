@@ -19,6 +19,7 @@
 
     parse_str($query, $params);
 
+    $db->log("OIDC", $path);
     switch($path) {
         case "/oidc/auth":          
             $handler = new EndpointAuthentication($config, $db); 
@@ -28,7 +29,7 @@
             $handler = new EndpointAuthentication($config, $db); 
             $function = "callback";
             break;
-        case "/oidc/token":         
+        case "/oidc/token":
             $handler = new EndpointToken($config, $db); 
             $function = "process";
             break;
@@ -45,5 +46,6 @@
     if($handler) {
         $handler->$function();
     } else {
-        echo $path;
+        http_response_code(404);
+        echo "404 Not Found";
     }

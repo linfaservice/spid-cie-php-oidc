@@ -16,6 +16,8 @@ class EndpointSessionEnd extends Endpoint {
             $request = $this->db->getRequestByIdToken($id_token_hint);
             $this->db->deleteRequest($request['req_id']);
             
+            $this->db->log("SESSION END", $post_logout_redirect_uri);
+
             $logout_url = $this->config['spid-php-proxy']['logout_url'];
             $logout_url.= '?client_id='.$this->config['spid-php-proxy']['client_id'];
             $logout_url.= '&redirect_uri='.urlencode($post_logout_redirect_uri);
