@@ -56,7 +56,7 @@ class EndpointToken extends Endpoint {
             $subject = $userinfo['fiscalNumber'];
             $exp_time = 1800;
             $iss = $this->config['spid-php-proxy']['origin'];
-            $aud = $redirect_uri;
+            $aud = $client_id;
             $jwk_pem = $this->config['jwt_private_key'];
     
             $id_token = JWT::makeIdToken($subject, $exp_time, $iss, $aud, $jwk_pem);
