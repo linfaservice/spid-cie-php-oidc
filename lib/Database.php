@@ -120,6 +120,16 @@ class Database {
         );
     }
 
+    function getRequestByClientID($client_id) {
+        $result = $this->query("
+            SELECT req_id, client_id, redirect_uri, state FROM token
+            WHERE client_id = :client_id;",
+            array(":client_id" => $client_id)
+        );
+
+        return $result;
+    }
+
     function createAuthorizationCode($req_id) {
         $code = uniqid();
         $stmt = $this->db->prepare("
