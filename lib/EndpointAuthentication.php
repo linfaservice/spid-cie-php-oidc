@@ -16,6 +16,7 @@ class EndpointAuthentication extends Endpoint {
         $client_id      = $_GET['client_id'];
         $redirect_uri   = $_GET['redirect_uri'];
         $state          = $_GET['state'];
+        $nonce          = $_GET['nonce'];
     
         $this->db->log("AUTH", var_export($_GET, true));
 
@@ -26,9 +27,9 @@ class EndpointAuthentication extends Endpoint {
             if(!in_array($client_id, array_keys($clients))) throw new Exception('invalid_client');
             if(!in_array($redirect_uri, $clients[$client_id]['redirect_uri'])) throw new Exception('invalid_redirect_uri');
     
-            $req_id = $this->db->updateRequest($client_id, $redirect_uri, $state);
+            $req_id = $this->db->updateRequest($client_id, $redirect_uri, $state, $nonce);
             if($req_id==null) {
-                $req_id = $this->db->createRequest($client_id, $redirect_uri, $state);
+                $req_id = $this->db->createRequest($client_id, $redirect_uri, $state, $nonce);
             }
     
             $url = $this->config['spid-php-proxy']['login_url']
@@ -56,9 +57,10 @@ class EndpointAuthentication extends Endpoint {
     }
 
     function callback() {
-        $origin = $_SERVER['HTTP_ORIGIN'];
+        $referer = $_SERVER['HTTP_REFERER'];
+        $origin = $this->config['spid-php-proxy']['origin'];
 
-        if($origin==$this->config['spid-php-proxy']['origin']) {
+        if((substr($referer, 0, strlen($origin)) === $origin)) {
 
             $req_id         = base64_decode($_POST['state']);
             $auth_code      = $this->db->createAuthorizationCode($req_id);

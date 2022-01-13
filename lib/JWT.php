@@ -99,7 +99,7 @@
             return $token;
         }
 
-        static function makeIdToken($subject, $exp_time, $iss, $aud, $jwk_pem): string {
+        static function makeIdToken($subject, $exp_time, $iss, $aud, $nonce, $jwk_pem): string {
             
             $iat        = new DateTimeImmutable();
             $exp_time   = $exp_time?: DEFAULT_TOKEN_EXPIRATION_TIME;
@@ -111,7 +111,8 @@
                 'iat'  => $iat->getTimestamp(),                     // Issued at: time when the token was generated
                 'nbf'  => $iat->getTimestamp(),                     // Not before
                 'exp'  => $exp,                                     // Expire
-                'sub'   => $subject,                                // Subject Data
+                'sub'  => $subject,                                 // Subject Data
+                'nonce'=> $nonce,
             ];
 
             $algorithmManager = new AlgorithmManager([new RS256()]);

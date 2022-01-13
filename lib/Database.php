@@ -18,7 +18,8 @@ class Database {
                 access_token    STRING UNIQUE,
                 token_timestamp DATETIME,
                 state           STRING,
-                userinfo        STRING
+                userinfo        STRING,
+                nonce           STRING
             );
 
             CREATE TABLE IF NOT EXISTS log (
@@ -34,21 +35,22 @@ class Database {
         ");
     }
 
-    function createRequest($client_id, $redirect_uri, $state='') {
+    function createRequest($client_id, $redirect_uri, $state='', $nonce='') {
         $code = uniqid();
         $stmt = $this->db->prepare("
-            INSERT INTO token(client_id, redirect_uri, state) 
-            VALUES(:client_id, :redirect_uri, :state);
+            INSERT INTO token(client_id, redirect_uri, state, nonce) 
+            VALUES(:client_id, :redirect_uri, :state, :nonce);
         ");
         $stmt->bindValue(':client_id', $client_id, SQLITE3_TEXT);
         $stmt->bindValue(':redirect_uri', $redirect_uri, SQLITE3_TEXT);
         $stmt->bindValue(':state', $state, SQLITE3_TEXT);
+        $stmt->bindValue(':nonce', $nonce, SQLITE3_TEXT);
         $stmt->execute();
         $req_id = $this->db->lastInsertRowid();
         return $req_id;
     }
 
-    function updateRequest($client_id, $redirect_uri, $state='') {
+    function updateRequest($client_id, $redirect_uri, $state='', $nonce='') {
         $req_id = null;
         $result = $this->query("
             SELECT req_id FROM token 
@@ -66,10 +68,11 @@ class Database {
             $req_id = $result[0]['req_id'];
             $stmt = $this->db->prepare("
                 UPDATE token 
-                SET state=:state
+                SET state=:state, nonce=:nonce
                 WHERE req_id=:req_id;
             ");
             $stmt->bindValue(':state', $state, SQLITE3_TEXT);
+            $stmt->bindValue(':nonce', $nonce, SQLITE3_TEXT);
             $stmt->bindValue(':req_id', $req_id, SQLITE3_TEXT);
             $stmt->execute();
         }
@@ -78,7 +81,7 @@ class Database {
 
     function getRequest($req_id) {
         $result = $this->query("
-            SELECT client_id, redirect_uri, state FROM token
+            SELECT client_id, redirect_uri, state, nonce FROM token
             WHERE req_id = :req_id;",
             array(":req_id" => $req_id)
         );
@@ -87,12 +90,13 @@ class Database {
             "client_id"     => $result[0]['client_id'],
             "redirect_uri"  => $result[0]['redirect_uri'],
             "state"         => $result[0]['state'],
+            "nonce"         => $result[0]['nonce'],
         );
     }
 
     function getRequestByCode($code) {
         $result = $this->query("
-            SELECT req_id, client_id, redirect_uri, state FROM token
+            SELECT req_id, client_id, redirect_uri, state, nonce FROM token
             WHERE code = :code;",
             array(":code" => $code)
         );
@@ -102,12 +106,13 @@ class Database {
             "client_id"     => $result[0]['client_id'],
             "redirect_uri"  => $result[0]['redirect_uri'],
             "state"         => $result[0]['state'],
+            "nonce"         => $result[0]['nonce'],
         );
     }
 
     function getRequestByIdToken($id_token) {
         $result = $this->query("
-            SELECT req_id, client_id, redirect_uri, state FROM token
+            SELECT req_id, client_id, redirect_uri, state, nonce FROM token
             WHERE id_token = :id_token;",
             array(":id_token" => $id_token)
         );
@@ -117,12 +122,13 @@ class Database {
             "client_id"     => $result[0]['client_id'],
             "redirect_uri"  => $result[0]['redirect_uri'],
             "state"         => $result[0]['state'],
+            "nonce"         => $result[0]['nonce'],
         );
     }
 
     function getRequestByClientID($client_id) {
         $result = $this->query("
-            SELECT req_id, client_id, redirect_uri, state FROM token
+            SELECT req_id, client_id, redirect_uri, state, nonce FROM token
             WHERE client_id = :client_id;",
             array(":client_id" => $client_id)
         );

@@ -52,15 +52,17 @@ class EndpointToken extends Endpoint {
     
             $access_token = $this->db->createAccessToken($code);
             $userinfo = (array) $this->db->getUserinfo($access_token);
+            $request = $this->db->getRequestByCode($code);
     
             $subject = $userinfo['fiscalNumber'];
             $exp_time = 1800;
             $iss = $this->config['spid-php-proxy']['origin'];
             $aud = $client_id;
             $jwk_pem = $this->config['jwt_private_key'];
-    
-            $id_token = JWT::makeIdToken($subject, $exp_time, $iss, $aud, $jwk_pem);
-            $request = $this->db->getRequestByCode($code);
+            $nonce = $request['nonce'];
+            
+            $id_token = JWT::makeIdToken($subject, $exp_time, $iss, $aud, $nonce, $jwk_pem);
+            
             $this->db->saveIdToken($request['req_id'], $id_token);
     
             $this->db->log("ID_TOKEN", $id_token);
