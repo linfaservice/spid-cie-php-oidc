@@ -1,6 +1,6 @@
 <?php
 
-require('JWT.php');
+require_once('JWT.php');
 
 class EndpointToken extends Endpoint {
 

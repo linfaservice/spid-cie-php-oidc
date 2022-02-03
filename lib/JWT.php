@@ -116,7 +116,7 @@
             ];
 
             $algorithmManager = new AlgorithmManager([new RS256()]);
-            $jwk = JWKFactory::createFromKeyFile($jwk_pem);
+            $jwk = getKeyJWK($jwk_pem);
             $jwsBuilder = new JWSBuilder($algorithmManager);
             $jws = $jwsBuilder
                 ->create() 
@@ -128,5 +128,15 @@
             $token = $serializer->serialize($jws, 0); 
         
             return $token;
+        }
+
+        static function getKeyJWK($file, $secret=null, $use='sig') {
+            $jwk = JWKFactory::createFromKeyFile($file, $secret, ['use' => $use]);
+            return $jwk;
+        }
+
+        static function getCertificateJWK($file, $use='sig') {
+            $jwk = JWKFactory::createFromCertificateFile($file, ['use' => $use]);
+            return $jwk;
         }
     }

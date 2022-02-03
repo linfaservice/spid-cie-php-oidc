@@ -3,6 +3,7 @@
     require("../lib/Database.php");
     require("../lib/Endpoint.php");
     require("../lib/EndpointAuthentication.php");
+    require("../lib/EndpointCerts.php");
     require("../lib/EndpointToken.php");
     require("../lib/EndpointUserinfo.php");
     require("../lib/EndpointSessionEnd.php");
@@ -39,6 +40,10 @@
             break;
         case "/oidc/session/end":   
             $handler = new EndpointSessionEnd($config, $db); 
+            $function = "process";
+            break;
+        case "/oidc/certs":
+            $handler = new EndpointCerts($config, $db); 
             $function = "process";
             break;
     }
