@@ -42,13 +42,14 @@ class EndpointAuthentication extends Endpoint {
     
     
         } catch(Exception $e) {
-            if($this->config['debug']) {
+            if($this->config['debug'] || $e->getMessage()=='invalid_redirect_uri') {
+                http_response_code(400);
                 echo "ERROR: ".$e->getMessage();
     
             } else {
                 $return = $redirect_uri;
                 if(strpos($return, '?')>-1) { $return.='&error='.$e->getMessage(); }
-                else { $return.='?error='.$e->getCode(); }
+                else { $return.='?error='.$e->getMessage(); }
                 $return.='&error_description='.$e->getMessage();
                 $return.='&state='.$state;
                 header('Location: '.$return);

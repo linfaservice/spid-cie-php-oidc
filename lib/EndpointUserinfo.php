@@ -9,14 +9,24 @@ class EndpointUserinfo extends Endpoint {
     }
 
     function process() {
-        $bearer = $this->getBearerToken();
-        $this->db->log("USERINFO", "Bearer: ".$bearer);
-        $userinfo = (array) $this->db->getUserinfo($bearer);
-        $userinfo['sub'] = $userinfo['fiscalNumber'];
-        $this->db->log("USERINFO", $userinfo);
+        try {
+            $bearer = $this->getBearerToken();
+            if($bearer==null || $bearer=='') throw new Exception('access_denied');
+            $this->db->log("USERINFO", "Bearer: ".$bearer);
+            $userinfo = (array) $this->db->getUserinfo($bearer);
+            $userinfo['sub'] = $userinfo['fiscalNumber'];
+            $this->db->log("USERINFO", $userinfo);
 
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($userinfo);
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode($userinfo);
+
+        } catch(Exception $e) {
+            http_response_code(400);
+            if($this->config['debug']) {
+                echo "ERROR: ".$e->getMessage();
+                $this->db->log("USERINFO_ERR", $e->getMessage());
+            } 
+        }
     }
 
     /** 
