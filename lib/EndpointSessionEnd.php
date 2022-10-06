@@ -11,12 +11,15 @@ class EndpointSessionEnd extends Endpoint {
     function process() {
         $id_token_hint = $_GET['id_token_hint'];
         $post_logout_redirect_uri = $_GET['post_logout_redirect_uri'];
+        $state = $_GET['state'];
     
         if($id_token_hint) {
+            $this->db->log("SESSION END", "id_token_hint: " . $id_token_hint);
             if($this->db->checkIdToken($id_token_hint)) {
                 $request = $this->db->getRequestByIdToken($id_token_hint);
                 $this->db->deleteRequest($request['req_id']);
-        
+                $this->db->log("SESSION END", "deleted request id: " . $request['req_id']);
+
             } else {
                 http_response_code(400);
                 if($this->config['debug']) {
@@ -26,6 +29,7 @@ class EndpointSessionEnd extends Endpoint {
             }
 
         } else {
+            $this->db->log("SESSION END", "id_token_hint not present");
             $client_id = null;
             $clients = $this->config['clients'];
             foreach($clients as $id=>$client_config) {
@@ -51,10 +55,11 @@ class EndpointSessionEnd extends Endpoint {
             }
         }
 
-        $this->db->log("SESSION END", $post_logout_redirect_uri);
+        $this->db->log("SESSION END", "post_logout_redirect_uri: " . $post_logout_redirect_uri);
         $logout_url = $this->config['spid-php-proxy']['logout_url'];
         $logout_url.= '?client_id='.$this->config['spid-php-proxy']['client_id'];
         $logout_url.= '&redirect_uri='.urlencode($post_logout_redirect_uri);
+        $logout_url.= '&state='.$state;
         header('Location: '.$logout_url); 
     }
 }
