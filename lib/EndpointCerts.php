@@ -22,13 +22,18 @@ class EndpointCerts extends Endpoint {
             $x5c    = preg_replace("/\s+/", "", $x5c);
 
             $cert = array(
-                'kty'       => $jwk->get('kty'),
-                'n'         => $jwk->get('n'),
-                'e'         => $jwk->get('e'),
-                'x5c'       => $x5c,
-                'x5t'       => $jwk->get('x5t'),
-                'x5t#256'   => $jwk->get('x5t#256'),
-                'use'       => $jwk->get('use')
+                'keys' => array(
+                    0 => array(
+                        'kid'       => $jwk->get('x5t#256'),
+                        'kty'       => $jwk->get('kty'),
+                        'n'         => $jwk->get('n'),
+                        'e'         => $jwk->get('e'),
+                        'x5c'       => $x5c,
+                        'x5t'       => $jwk->get('x5t'),
+                        'x5t#256'   => $jwk->get('x5t#256'),
+                        'use'       => $jwk->get('use')
+                    )
+                )
             );
 
             header('Content-Type: application/json; charset=utf-8');
