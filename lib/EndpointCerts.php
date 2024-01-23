@@ -28,9 +28,9 @@ class EndpointCerts extends Endpoint {
                         'kty'       => $jwk->get('kty'),
                         'n'         => $jwk->get('n'),
                         'e'         => $jwk->get('e'),
-                        'x5c'       => $x5c,
+                        'x5c'       => array(0 => $x5c),
                         'x5t'       => $jwk->get('x5t'),
-                        'x5t#256'   => $jwk->get('x5t#256'),
+                        'x5t#S256'   => $jwk->get('x5t#256'),
                         'use'       => $jwk->get('use')
                     )
                 )
