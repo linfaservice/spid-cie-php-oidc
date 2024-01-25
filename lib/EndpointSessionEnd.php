@@ -56,10 +56,16 @@ class EndpointSessionEnd extends Endpoint {
         }
 
         $this->db->log("SESSION END", "post_logout_redirect_uri: " . $post_logout_redirect_uri);
+
+        $url = '';
+        
         $logout_url = $this->config['spid-php-proxy']['logout_url'];
-        $logout_url.= '?client_id='.$this->config['spid-php-proxy']['client_id'];
-        $logout_url.= '&redirect_uri='.urlencode($post_logout_redirect_uri);
-        $logout_url.= '&state='.$state;
-        header('Location: '.$logout_url); 
+        if(strpos($logout_url, '?')>-1) $url = $logout_url . '&';
+        else $url = $logout_url . '?';
+        
+        $url.= 'client_id='.$this->config['spid-php-proxy']['client_id'];
+        $url.= '&redirect_uri='.urlencode($post_logout_redirect_uri);
+        $url.= '&state='.$state;
+        header('Location: '.$url); 
     }
 }
