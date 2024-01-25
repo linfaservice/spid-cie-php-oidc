@@ -31,9 +31,14 @@ class EndpointAuthentication extends Endpoint {
             if($req_id==null) {
                 $req_id = $this->db->createRequest($client_id, $redirect_uri, $state, $nonce);
             }
-    
-            $url = $this->config['spid-php-proxy']['login_url']
-            .'?client_id='.$this->config['spid-php-proxy']['client_id']
+
+            $url = '';
+            
+            $login_url = $this->config['spid-php-proxy']['login_url'];
+            if(strpos($login_url, '?')>-1) $url = $login_url . '&';
+            else $url = $login_url . '?';
+            
+            $url .= 'client_id='.$this->config['spid-php-proxy']['client_id']
             .'&level='.$this->config['clients'][$client_id]['level']
             .'&redirect_uri='.$this->config['spid-php-proxy']['redirect_uri']
             .'&state='.base64_encode($req_id);
