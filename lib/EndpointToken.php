@@ -11,6 +11,9 @@ class EndpointToken extends Endpoint {
     }
 
     function process() {
+        // allow json body data
+        if(!count($_POST)) $_POST = json_decode(file_get_contents('php://input'), true);
+
         $clients        = $this->config['clients'];
         $code           = $_POST['code'];
         $scope          = $_POST['scope'];
@@ -47,6 +50,7 @@ class EndpointToken extends Endpoint {
             if(strpos($scope, 'profile')<0) throw new Exception('invalid_scope');
             if($grant_type!='authorization_code') throw new Exception('invalid_request');
             if(!in_array($client_id, array_keys($clients))) throw new Exception('invalid_client');
+            if(!$redirect_uri && count($clients[$client_id]['redirect_uri'])==1) $redirect_uri = $clients[$client_id]['redirect_uri'][0];
             if(!in_array($redirect_uri, $clients[$client_id]['redirect_uri'])) throw new Exception('invalid_redirect_uri');
             if(!$this->db->checkAuthorizationCode($client_id, $redirect_uri, $code)) throw new Exception('invalid_code');
     

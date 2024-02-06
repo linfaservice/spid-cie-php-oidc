@@ -1,5 +1,7 @@
 <?php
 
+require_once('JWT.php');
+
 class EndpointAuthentication extends Endpoint {
 
     public $name = "Authentication Endpoint";
@@ -17,8 +19,15 @@ class EndpointAuthentication extends Endpoint {
         $redirect_uri   = $_GET['redirect_uri'];
         $state          = $_GET['state'];
         $nonce          = $_GET['nonce'];
+        $request        = $_GET['request'];
     
         $this->db->log("AUTH", var_export($_GET, true));
+
+
+        //TODO: get params from request param
+        //$request = JWT::decode($request);
+        //$state = $request->state;
+        //$redirect_uri = $request->redirect_uri;
 
         try {
             if(strpos($scope, 'openid')<0) throw new Exception('invalid_scope');
