@@ -56,23 +56,24 @@ class Database {
             SELECT req_id FROM token 
             WHERE client_id=:client_id 
             AND redirect_uri=:redirect_uri
+            AND nonce=:nonce
             AND req_timestamp > datetime('now', '-30 minutes')
             ORDER BY req_timestamp DESC
             LIMIT 1;
         ", array(
             ":client_id" => $client_id,
-            ":redirect_uri" => $redirect_uri
+            ":redirect_uri" => $redirect_uri,
+            ":nonce" => $nonce
         ));
 
         if(count($result)==1) {
             $req_id = $result[0]['req_id'];
             $stmt = $this->db->prepare("
                 UPDATE token 
-                SET state=:state, nonce=:nonce
+                SET state=:state
                 WHERE req_id=:req_id;
             ");
             $stmt->bindValue(':state', $state, SQLITE3_TEXT);
-            $stmt->bindValue(':nonce', $nonce, SQLITE3_TEXT);
             $stmt->bindValue(':req_id', $req_id, SQLITE3_TEXT);
             $stmt->execute();
         }
