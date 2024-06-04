@@ -13,10 +13,10 @@
     $config         = file_exists(CONFIG_FILE)? json_decode(file_get_contents(CONFIG_FILE), true) : array();
     $db             = new Database($config['database']);
 
-    $request_uri    = $_SERVER['REQUEST_URI'];
-    $request        = parse_url($request_uri);
-    $path           = $request['path'];
-    $query          = $request['query'];
+    $request_uri    = $_SERVER['REQUEST_URI'] ?? '';
+    $request        = parse_url($request_uri) ?? '';
+    $path           = $request['path'] ?? '';
+    $query          = $request['query'] ?? '';
 
     parse_str($query, $params);
 

@@ -15,13 +15,13 @@ class EndpointToken extends Endpoint {
         if(!count($_POST)) $_POST = json_decode(file_get_contents('php://input'), true);
 
         $clients        = $this->config['clients'];
-        $code           = $_POST['code'];
-        $scope          = $_POST['scope'];
-        $grant_type     = $_POST['grant_type'];
-        $client_id      = $_POST['client_id'];
-        $client_secret  = $_POST['client_secret'];
-        $redirect_uri   = $_POST['redirect_uri'];
-        $state          = $_POST['state'];
+        $code           = $_POST['code'] ?? '';
+        $scope          = $_POST['scope'] ?? '';
+        $grant_type     = $_POST['grant_type'] ?? '';
+        $client_id      = $_POST['client_id'] ?? '';
+        $client_secret  = $_POST['client_secret'] ?? '';
+        $redirect_uri   = $_POST['redirect_uri'] ?? '';
+        $state          = $_POST['state'] ?? '';
 
         try {
             $credential = $this->getBasicAuthCredential();
