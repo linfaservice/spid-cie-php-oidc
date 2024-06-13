@@ -36,10 +36,12 @@ class EndpointCerts extends Endpoint {
                 )
             );
 
+            syslog(LOG_INFO, 'OIDC Certs Endpoint Response: ' . json_encode($cert));
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode($cert);
     
         } catch(Exception $e) {
+            syslog(LOG_INFO, 'OIDC Certs Endpoint Error: ' . $e->getMessage());
             http_response_code(400);
             if($this->config['debug']) {
                 echo "ERROR: ".$e->getMessage();

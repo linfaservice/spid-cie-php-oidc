@@ -21,6 +21,24 @@
     parse_str($query, $params);
 
     $db->log("OIDC", $path);
+
+    $ip = $_SERVER['REMOTE_ADDR'];
+
+    if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+        $ip = $_SERVER['HTTP_CLIENT_IP'];
+    } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+    } else {
+        $ip = $_SERVER['REMOTE_ADDR'];
+    }
+
+    syslog(LOG_INFO, 'OIDC Request: ' . json_encode(array(
+        'ip' => $ip,
+        'path' => $path,
+        'query'=> $query,
+        'body' => $_POST
+    )));
+
     switch($path) {
         case "/oidc/auth":          
             $handler = new EndpointAuthentication($config, $db); 

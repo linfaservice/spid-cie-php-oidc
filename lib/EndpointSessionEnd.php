@@ -22,6 +22,7 @@ class EndpointSessionEnd extends Endpoint {
 
             } else {
                 http_response_code(400);
+                syslog(LOG_INFO, 'OIDC Session End Endpoint Error: id_token not valid');
                 if($this->config['debug']) {
                     echo "ERROR: id_token not valid";
                     $this->db->log("SESSION_END_ERR", "id_token not valid");
@@ -48,6 +49,7 @@ class EndpointSessionEnd extends Endpoint {
 
             } else {
                 http_response_code(400);
+                syslog(LOG_INFO, 'OIDC Session End Endpoint Error: client_id not found for post_logout_redirect_uri');
                 if($this->config['debug']) {
                     echo "ERROR: client_id not found for post_logout_redirect_uri";
                     $this->db->log("SESSION_END_ERR", "client_id not found for post_logout_redirect_uri");
@@ -66,6 +68,8 @@ class EndpointSessionEnd extends Endpoint {
         $url.= 'client_id='.$this->config['spid-php-proxy']['client_id'];
         $url.= '&redirect_uri='.urlencode($post_logout_redirect_uri);
         $url.= '&state='.$state;
+
+        syslog(LOG_INFO, 'OIDC Session End Endpoint Response: ' . $url);
         header('Location: '.$url); 
     }
 }

@@ -11,13 +11,16 @@ class EndpointUserinfo extends Endpoint {
     function process() {
         try {
             $bearer = $this->getBearerToken();
-            if($bearer==null || $bearer=='') throw new Exception('access_denied');
             $this->db->log("USERINFO", "Bearer: ".$bearer);
+            syslog(LOG_INFO, 'OIDC Userinfo Endpoint Request Bearer: ' . $bearer);
+            if($bearer==null || $bearer=='') throw new Exception('access_denied');
+
             $userinfo = (array) $this->db->getUserinfo($bearer);
             $userinfo['sub'] = $userinfo['fiscalNumber'];
             $this->db->log("USERINFO", $userinfo);
 
             header('Content-Type: application/json; charset=utf-8');
+            syslog(LOG_INFO, 'OIDC Userinfo Endpoint Response: ' . json_encode($userinfo));
             echo json_encode($userinfo);
 
         } catch(Exception $e) {
@@ -25,6 +28,7 @@ class EndpointUserinfo extends Endpoint {
             if($this->config['debug']) {
                 echo "ERROR: ".$e->getMessage();
                 $this->db->log("USERINFO_ERR", $e->getMessage());
+                syslog(LOG_INFO, 'OIDC Userinfo Endpoint Error: ' . $e->getMessage());
             } 
         }
     }

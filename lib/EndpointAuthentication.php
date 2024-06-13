@@ -52,10 +52,13 @@ class EndpointAuthentication extends Endpoint {
             .'&redirect_uri='.$this->config['spid-php-proxy']['redirect_uri']
             .'&state='.base64_encode($req_id);
 
+            syslog(LOG_INFO, 'OIDC Authorization Endpoint Proxy Redirect Location: ' . $url);
             header('Location: '.$url);
     
     
         } catch(Exception $e) {
+            syslog(LOG_INFO, 'OIDC Authorization Endpoint Proxy Redirect Error: ' . $e->getMessage);
+
             if($this->config['debug'] || $e->getMessage()=='invalid_redirect_uri') {
                 http_response_code(400);
                 echo "ERROR: ".$e->getMessage();
@@ -93,12 +96,15 @@ class EndpointAuthentication extends Endpoint {
             else $return.='?code='.$auth_code;
             $return.='&state='.$state;
 
+            syslog(LOG_INFO, 'OIDC Authorization Endpoint Response Location: ' . $return);
             header("Location: ".$return);
 
         } else {
             if($this->config['debug']) {
                 echo "Invalid origin: ".$origin;
             }
+
+            syslog(LOG_INFO, 'OIDC Authorization Endpoint Response Error: invalid origin' . $origin);
             http_response_code(404);
         }
     }

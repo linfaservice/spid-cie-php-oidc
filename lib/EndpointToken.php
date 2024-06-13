@@ -27,11 +27,15 @@ class EndpointToken extends Endpoint {
             $credential = $this->getBasicAuthCredential();
             if($credential!=false && is_array($credential)) {
                 $this->db->log("TOKEN Credential", var_export($credential, true));
+                syslog(LOG_INFO, 'OIDC Token Endpoint Credential: ' . json_encode($credential));
+
                 $username = $credential['username'];
                 $password = $credential['password'];
 
                 $auth_method = $clients[$username]['token_endpoint_auth_method'];
                 $this->db->log("TOKEN configured auth_method", var_export($auth_method, true));
+                syslog(LOG_INFO, 'OIDC Token Endpoint Auth Method: ' . json_encode($auth_method));
+
                 switch($auth_method) { 
                     case 'client_secret_post':
                         // already have client_id and client_secret
@@ -45,6 +49,7 @@ class EndpointToken extends Endpoint {
             }
         
             $this->db->log("TOKEN", var_export($_POST, true));
+            syslog(LOG_INFO, 'OIDC Token Endpoint Request Body: ' . json_encode($_POST));
     
             if(strpos($scope, 'openid')<0) throw new Exception('invalid_scope');
             if(strpos($scope, 'profile')<0) throw new Exception('invalid_scope');
@@ -72,18 +77,22 @@ class EndpointToken extends Endpoint {
             $this->db->log("ID_TOKEN", $id_token);
     
             header('Content-Type: application/json; charset=utf-8');
-            echo json_encode(array(
+            $response = json_encode(array(
                 "access_token" => $access_token,
                 "token_type" => "Bearer",
                 "expires_in" => 1800,
                 "id_token" => $id_token
             ));
+
+            syslog(LOG_INFO, 'OIDC Token Endpoint Response: ' . $response);
+            echo $response;
     
         } catch(Exception $e) {
             http_response_code(400);
             if($this->config['debug']) {
                 echo "ERROR: ".$e->getMessage();
                 $this->db->log("TOKEN_ERR", $e->getMessage());
+                syslog(LOG_INFO, 'OIDC Token Endpoint Error: ' . $e->getMessage());
             } 
         }
     }
