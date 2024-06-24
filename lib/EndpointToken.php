@@ -57,6 +57,11 @@ class EndpointToken extends Endpoint {
             if(!in_array($client_id, array_keys($clients))) throw new Exception('invalid_client');
             if(!$redirect_uri && count($clients[$client_id]['redirect_uri'])==1) $redirect_uri = $clients[$client_id]['redirect_uri'][0];
             if(!in_array($redirect_uri, $clients[$client_id]['redirect_uri'])) throw new Exception('invalid_redirect_uri');
+            
+            // check secret for id
+            if($clients[$client_id]['client_secret']!=$client_secret) throw new Exception('Unauthorized');
+
+            // check authorization code
             if(!$this->db->checkAuthorizationCode($client_id, $redirect_uri, $code)) throw new Exception('invalid_code');
     
             $access_token = $this->db->createAccessToken($code);
