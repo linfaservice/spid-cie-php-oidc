@@ -19,9 +19,13 @@
         $getConfig = $db_config->prepare("SELECT oidc FROM spid_cie_php_config");
         $getConfig->execute();
         $config = json_decode($getConfig->fetch()['oidc'], true);
-    } 
 
-    $db             = new Database($config['database']);
+        $db             = new Database($db_config_file, 'mysql');
+    
+    } else {
+
+        $db             = new Database($config['database'], 'sqlite');
+    }
 
     $request_uri    = $_SERVER['REQUEST_URI'] ?? '';
     $request        = parse_url($request_uri) ?? '';
