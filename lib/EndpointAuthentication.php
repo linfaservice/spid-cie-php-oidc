@@ -65,6 +65,7 @@ class EndpointAuthentication extends Endpoint {
     
             } else {
                 $return = $redirect_uri;
+                if($return=='') $return = '/';
                 if(strpos($return, '?')>-1) { $return.='&error='.$e->getMessage(); }
                 else { $return.='?error='.$e->getMessage(); }
                 $return.='&error_description='.$e->getMessage();
