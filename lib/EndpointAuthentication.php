@@ -80,7 +80,16 @@ class EndpointAuthentication extends Endpoint {
         $origin = $this->config['spid-php-proxy']['origin'];
 
         if((substr($referer, 0, strlen($origin)) === $origin)) {
-
+            
+            if($_POST['state']==null || $_POST['state']=='') {
+                syslog(LOG_INFO, 'Error: state not found - Payload: ' . var_export($_POST, true));
+                if($this->config['debug']) {
+                    echo "Authentication was successfull but I don't know where to redirect you, please come back to your service URL.";
+                }
+                http_response_code(500);
+                die();
+            }
+            
             $req_id         = base64_decode($_POST['state']);
             $auth_code      = $this->db->createAuthorizationCode($req_id);
             $request        = $this->db->getRequest($req_id);
