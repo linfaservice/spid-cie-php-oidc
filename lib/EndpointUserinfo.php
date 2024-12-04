@@ -17,6 +17,7 @@ class EndpointUserinfo extends Endpoint {
 
             $userinfo = (array) $this->db->getUserinfo($bearer);
             $userinfo['sub'] = $userinfo['fiscalNumber'];
+            if($userinfo['sub']==null) $userinfo['sub'] = $userinfo['spidCode'];
             $this->db->log("USERINFO", $userinfo);
 
             header('Content-Type: application/json; charset=utf-8');
