@@ -8,10 +8,24 @@
     require("../lib/EndpointUserinfo.php");
     require("../lib/EndpointSessionEnd.php");
 
+    const CONFIG_FROM_DB = true;
     const CONFIG_FILE = "../spid-php-oidc.json";
 
     $config         = file_exists(CONFIG_FILE)? json_decode(file_get_contents(CONFIG_FILE), true) : array();
-    $db             = new Database($config['database']);
+
+    if(CONFIG_FROM_DB) {
+        $db_config_file = json_decode(file_get_contents('../database-config.json'), true);
+        $db_config = new PDO ($db_config_file['dsn'], $db_config_file['username'], $db_config_file['password']);
+        $getConfig = $db_config->prepare("SELECT oidc FROM spid_cie_php_config");
+        $getConfig->execute();
+        $config = json_decode($getConfig->fetch()['oidc'], true);
+
+        $db             = new Database($db_config_file, 'mysql');
+    
+    } else {
+
+        $db             = new Database($config['database'], 'sqlite');
+    }
 
     $request_uri    = $_SERVER['REQUEST_URI'] ?? '';
     $request        = parse_url($request_uri) ?? '';

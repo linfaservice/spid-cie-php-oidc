@@ -2,36 +2,42 @@
 
 class Database {
 
-    function __construct($db_file) {
-        $this->db = new SQLite3($db_file);
-        if(!$this->db) { die("Error while connecting to db.sqlite"); }
+    function __construct($config, $driver='sqlite') {
+
+        if($driver=='sqlite') {
+            $this->db = new PDO('sqlite:' . $config);
+        } else {
+            $this->db = new PDO ($config['dsn'], $config['username'], $config['password']);
+        }
+        
+        if(!$this->db) { die("Error while connecting to db"); }
 
         $this->db->exec("
             CREATE TABLE IF NOT EXISTS token (
-                req_id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                req_timestamp   DATETIME DEFAULT (datetime('now')) NOT NULL,
-                client_id       STRING NOT NULL,
-                redirect_uri    STRING NOT NULL,
-                code            STRING UNIQUE,
-                auth_timestamp  DATETIME,
-                id_token        STRING UNIQUE,
-                access_token    STRING UNIQUE,
-                token_timestamp DATETIME,
-                state           STRING,
-                userinfo        STRING,
-                nonce           STRING
+                req_id          int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                req_timestamp   datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                client_id       tinytext NOT NULL,
+                redirect_uri    text NOT NULL,
+                code            tinytext UNIQUE,
+                auth_timestamp  datetime,
+                id_token        text UNIQUE,
+                access_token    tinytext UNIQUE,
+                token_timestamp datetime,
+                state           text,
+                userinfo        text,
+                nonce           text
             );
 
             CREATE TABLE IF NOT EXISTS log (
-                timestamp       DATETIME DEFAULT (datetime('now')) NOT NULL,
-                tag             STRING,
-                value           STRING
+                timestamp       datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                tag             text,
+                value           text
             );
         ");
 
         $this->db->exec("
-            DELETE FROM token WHERE req_timestamp <= datetime('now', '-30 minutes');
-            DELETE FROM log WHERE timestamp <= datetime('now', '-60 minutes');
+            DELETE FROM token WHERE req_timestamp <= (NOW() - INTERVAL 30 MINUTE);
+            DELETE FROM log WHERE timestamp <= (NOW() - INTERVAL 60 MINUTE);
         ");
     }
 
@@ -41,12 +47,13 @@ class Database {
             INSERT INTO token(client_id, redirect_uri, state, nonce) 
             VALUES(:client_id, :redirect_uri, :state, :nonce);
         ");
-        $stmt->bindValue(':client_id', $client_id, SQLITE3_TEXT);
-        $stmt->bindValue(':redirect_uri', $redirect_uri, SQLITE3_TEXT);
-        $stmt->bindValue(':state', $state, SQLITE3_TEXT);
-        $stmt->bindValue(':nonce', $nonce, SQLITE3_TEXT);
+        $stmt->bindValue(':client_id', $client_id, PDO::PARAM_STR);
+        $stmt->bindValue(':redirect_uri', $redirect_uri, PDO::PARAM_STR);
+        $stmt->bindValue(':state', $state, PDO::PARAM_STR);
+        $stmt->bindValue(':nonce', $nonce, PDO::PARAM_STR);
         $stmt->execute();
-        $req_id = $this->db->lastInsertRowid();
+        //$req_id = $this->db->lastInsertRowid();
+        $req_id = $this->db->lastInsertId();
         return $req_id;
     }
 
@@ -57,7 +64,7 @@ class Database {
             WHERE client_id=:client_id 
             AND redirect_uri=:redirect_uri
             AND nonce=:nonce
-            AND req_timestamp > datetime('now', '-30 minutes')
+            AND req_timestamp > (NOW() - INTERVAL 30 MINUTE)
             ORDER BY req_timestamp DESC
             LIMIT 1;
         ", array(
@@ -73,8 +80,8 @@ class Database {
                 SET state=:state
                 WHERE req_id=:req_id;
             ");
-            $stmt->bindValue(':state', $state, SQLITE3_TEXT);
-            $stmt->bindValue(':req_id', $req_id, SQLITE3_TEXT);
+            $stmt->bindValue(':state', $state, PDO::PARAM_STR);
+            $stmt->bindValue(':req_id', $req_id, PDO::PARAM_STR);
             $stmt->execute();
         }
         return $req_id;
@@ -141,11 +148,11 @@ class Database {
         $code = uniqid();
         $stmt = $this->db->prepare("
             UPDATE token 
-            SET code=:code, auth_timestamp=datetime('now')
+            SET code=:code, auth_timestamp=NOW()
             WHERE req_id=:req_id;
         ");
-        $stmt->bindValue(':code', $code, SQLITE3_TEXT);
-        $stmt->bindValue(':req_id', $req_id, SQLITE3_TEXT);
+        $stmt->bindValue(':code', $code, PDO::PARAM_STR);
+        $stmt->bindValue(':req_id', $req_id, PDO::PARAM_STR);
         $stmt->execute();
         return $code;
     }
@@ -194,11 +201,11 @@ class Database {
         $access_token = uniqid();
         $stmt = $this->db->prepare("
             UPDATE token
-            SET access_token=:access_token, token_timestamp=datetime('now')
+            SET access_token=:access_token, token_timestamp=NOW()
             WHERE code=:code;
         ");
-        $stmt->bindValue(':access_token', $access_token, SQLITE3_TEXT);
-        $stmt->bindValue(':code', $code, SQLITE3_TEXT);
+        $stmt->bindValue(':access_token', $access_token, PDO::PARAM_STR);
+        $stmt->bindValue(':code', $code, PDO::PARAM_STR);
         $stmt->execute();
         return $access_token;
     }
@@ -254,11 +261,8 @@ class Database {
     function query($sql, $values=array()) {
         $result = array();
         $stmt = $this->db->prepare($sql);
-        foreach($values as $key=>$value) {
-            $stmt->bindValue($key, $value, SQLITE3_TEXT);
-        }
-        $query = $stmt->execute();
-        while($row = $query->fetchArray(SQLITE3_ASSOC)) {
+        $stmt->execute($values);
+        foreach ($stmt as $row) {
             $result[] = $row;
         }
         return $result;
@@ -267,7 +271,7 @@ class Database {
     function exec($sql, $values=array()) {
         $stmt = $this->db->prepare($sql);
         foreach($values as $key=>$value) {
-            $stmt->bindValue($key, $value, SQLITE3_TEXT);
+            $stmt->bindValue($key, $value, PDO::PARAM_STR);
         }
         $result = $stmt->execute();
         return $result;

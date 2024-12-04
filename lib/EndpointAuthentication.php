@@ -65,6 +65,7 @@ class EndpointAuthentication extends Endpoint {
     
             } else {
                 $return = $redirect_uri;
+                if($return=='') $return = '/';
                 if(strpos($return, '?')>-1) { $return.='&error='.$e->getMessage(); }
                 else { $return.='?error='.$e->getMessage(); }
                 $return.='&error_description='.$e->getMessage();
@@ -79,7 +80,6 @@ class EndpointAuthentication extends Endpoint {
         $origin = $this->config['spid-php-proxy']['origin'];
 
         if((substr($referer, 0, strlen($origin)) === $origin)) {
-
             if($_POST['state']==null || $_POST['state']=='') {
                 syslog(LOG_INFO, 'Error: state not found - Payload: ' . var_export($_POST, true));
                 if($this->config['debug']) {
@@ -88,7 +88,6 @@ class EndpointAuthentication extends Endpoint {
                 http_response_code(500);
                 die();
             }
-
             $req_id         = base64_decode($_POST['state']);
             $auth_code      = $this->db->createAuthorizationCode($req_id);
             $request        = $this->db->getRequest($req_id);

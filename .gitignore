@@ -1,6 +1,8 @@
+composer
 composer.lock
 vendor
 spid-php-oidc.json
 spid-php-oidc.db
 www/adminer
 www/dump.php
+database-config.json
