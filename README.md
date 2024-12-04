@@ -8,6 +8,7 @@ composer install
 
 cd spid-php-oidc
 
+cp spid-php-oidc-setup-sample.json spid-php-oidc-setup.json
 cp spid-php-oidc-sample.json spid-php-oidc.json
 
 

@@ -8,23 +8,24 @@
     require("../lib/EndpointUserinfo.php");
     require("../lib/EndpointSessionEnd.php");
 
-    const CONFIG_FROM_DB = true;
+    const SETUP_CONFIG_FILE = "../spid-php-oidc-setup.json";
     const CONFIG_FILE = "../spid-php-oidc.json";
 
-    $config         = file_exists(CONFIG_FILE)? json_decode(file_get_contents(CONFIG_FILE), true) : array();
+    $setup_config = file_exists(SETUP_CONFIG_FILE)? json_decode(file_get_contents(SETUP_CONFIG_FILE), true) : array();
+    $config = file_exists(CONFIG_FILE)? json_decode(file_get_contents(CONFIG_FILE), true) : array();
 
-    if(CONFIG_FROM_DB) {
+    if($setup_config['config_from_database']) {
         $db_config_file = json_decode(file_get_contents('../database-config.json'), true);
         $db_config = new PDO ($db_config_file['dsn'], $db_config_file['username'], $db_config_file['password']);
         $getConfig = $db_config->prepare("SELECT oidc FROM spid_cie_php_config");
         $getConfig->execute();
         $config = json_decode($getConfig->fetch()['oidc'], true);
 
-        $db             = new Database($db_config_file, 'mysql');
+        $db = Database::getDatabase($db_config_file, 'mysql');
     
     } else {
 
-        $db             = new Database($config['database'], 'sqlite');
+        $db = Database::getDatabase($config['database'], 'sqlite');
     }
 
     $request_uri    = $_SERVER['REQUEST_URI'] ?? '';
