@@ -69,6 +69,8 @@ class EndpointToken extends Endpoint {
             $request = $this->db->getRequestByCode($code);
     
             $subject = $userinfo['fiscalNumber'];
+            if($subject==null) $subject = $userinfo['spidCode']; 
+
             $exp_time = 1800;
             $iss = $this->config['spid-php-proxy']['origin'];
             $aud = $client_id;
