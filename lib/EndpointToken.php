@@ -16,7 +16,6 @@ class EndpointToken extends Endpoint {
 
         $clients        = $this->config['clients'];
         $code           = $_POST['code'] ?? '';
-        $scope          = $_POST['scope'] ?? '';
         $grant_type     = $_POST['grant_type'] ?? '';
         $client_id      = $_POST['client_id'] ?? '';
         $client_secret  = $_POST['client_secret'] ?? '';
@@ -51,8 +50,6 @@ class EndpointToken extends Endpoint {
             $this->db->log("TOKEN", var_export($_POST, true));
             syslog(LOG_INFO, 'OIDC Token Endpoint Request Body: ' . json_encode($_POST));
     
-            if(strpos($scope, 'openid')===false) throw new Exception('invalid_scope');
-            if(strpos($scope, 'profile')===false) throw new Exception('invalid_scope');
             if($grant_type!='authorization_code') throw new Exception('invalid_request');
             if(!in_array($client_id, array_keys($clients))) throw new Exception('invalid_client');
             if(!$redirect_uri && count($clients[$client_id]['redirect_uri'])==1) $redirect_uri = $clients[$client_id]['redirect_uri'][0];
